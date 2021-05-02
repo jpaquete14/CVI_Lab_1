@@ -1,7 +1,7 @@
 clear all, close all
 
 thr = 140;
-minArea = 20;
+minArea = 10;
 circularityThr = 0.05;
 img = imread('Moedas1.jpg');
 
@@ -63,6 +63,7 @@ hold on
 for i=1:num
     plot(regionProps(i).Centroid(1),regionProps(i).Centroid(2),'ro')
     
+    %Draw radius of each coin
     x=regionProps(i).Centroid(1);
     y=regionProps(i).Centroid(2);
     L=regionProps(i).MajorAxisLength/2;
@@ -86,16 +87,17 @@ for i=1:num
 %             int8(regionProps(i).Centroid(1)),...
 %             int8(regionProps(i).Centroid(2)),'r');
  
+    %check if it's a coin
     if abs(regionProps(i).Circularity - 1.0) < circularityThr
         rectangle('Position', [fliplr(upLPoint) fliplr(dWindow)], 'Curvature',[1,1], 'EdgeColor',[1 0 1],'linewidth',2);
-        
+        %Calculate value of the coin
         r = mean([regionProps(i).MajorAxisLength, regionProps(i).MinorAxisLength])/2;
         coin = radius2cents(r);
         
         txt = strcat('Value: ', num2str(coin));
         ulp = fliplr(upLPoint);
         text(ulp(1), ulp(2), txt,'HorizontalAlignment','center')
-        
+        %add to the overall value
         if coin ~= 0
           num_of_coins = num_of_coins + 1;
           value_of_coins = value_of_coins + coin;
@@ -109,8 +111,8 @@ dim = [0.1 0 0 .95];
 str = strcat(num2str(length(find([regionProps.Area] > minArea))), ' objects, ', num2str(num_of_coins), ' coins with value of coins ', num2str(value_of_coins));
 annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
+%Select which coin to show the details
 but = 1;
-
 while (but == 1)
     [ci,li,but] = ginput(1)
    
@@ -126,5 +128,4 @@ while (but == 1)
     end
 end
 hold off
-
 
