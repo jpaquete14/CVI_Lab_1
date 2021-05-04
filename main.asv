@@ -37,7 +37,7 @@ bw = imclose(img(:,:,1) > thr,se);
 
 %%
 regionProps = regionprops(lb,'centroid', 'area', 'perimeter', 'FilledImage', 'Orientation','MajorAxisLength','MinorAxisLength', 'BoundingBox');
-[height, width, dim] = size(img);
+
 %Compute and add fields to imageProps
 newField = 'Circularity';
 for i=1:num
@@ -111,13 +111,12 @@ dim = [0.1 0 0 .95];
 str = strcat(num2str(length(find([regionProps.Area] > minArea))), ' objects, ', num2str(num_of_coins), ' coins with value of coins ', num2str(value_of_coins));
 annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
-guides = {'a: Order objects by Area', 'p: Order objects by perimteter', 's: order objects by sharpness'};
-guide = strjoin(guides, '\n');
+guide = {'a: Order objects by Area', 'p: Order objects by perimteter', 's: order objects by sharpness'}
 
 %Select which coin to show the details
 %but = 1;
 while (true)
-    t = text(width + 10, 100, guide);
+    t = text(100, 100, guide, 'FontWeight');
     [ci,li,but] = ginput(1)
    
             
