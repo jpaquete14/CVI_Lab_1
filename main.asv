@@ -37,7 +37,7 @@ bw = imclose(img(:,:,1) > thr,se);
 
 %%
 regionProps = regionprops(lb,'centroid', 'area', 'perimeter', 'FilledImage', 'Orientation','MajorAxisLength','MinorAxisLength', 'BoundingBox');
-
+[height, width, dim] = size(img);
 %Compute and add fields to imageProps
 newField = 'Circularity';
 for i=1:num
@@ -111,12 +111,13 @@ dim = [0.1 0 0 .95];
 str = strcat(num2str(length(find([regionProps.Area] > minArea))), ' objects, ', num2str(num_of_coins), ' coins with value of coins ', num2str(value_of_coins));
 annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
-guide = {'a: Order objects by Area', 'p: Order objects by perimteter', 's: order objects by sharpness'}
+guides = {'a: Order objects by Area', 'p: Order objects by perimteter', 's: order objects by sharpness'};
+guide = strjoin(guides, '\n');
 
 %Select which coin to show the details
 %but = 1;
 while (true)
-    t = text(100, 100, guide, 'FontWeight');
+    t = text(width + 10, 100, guide);
     [ci,li,but] = ginput(1)
    
             
@@ -175,7 +176,7 @@ while (true)
         linkaxes(images, 'x');
         while(true)
             [ci, li, but] = ginput(1);
-            if but == 113   %press 1 to leave current image
+            if but == 120   %press x to leave current image
                 close(OrderedSharpnessFigure);
                 imshow(img);
             end
@@ -185,7 +186,32 @@ while (true)
     
     if but == 113 %q to quit
         break;
-    end     
+    end
+    
+    if but == 116   %t for geometrical transformation
+        imshow(img);
+        while(true)
+            [ci, li, but] = ginput(1);
+            if but == 1 %click
+                 sel = lb(round(li), round(ci));
+                 if(sel ~= 0)
+                    boundingBox = regionProps(sel).BoundingBox;
+                    cropped = imcrop(img, boundingBox);
+                    
+                    [B, L, N, A] = bwboundaries(lb);
+                    boundary = B{sel};
+                    plot(boundary(:,2), boundary(:,1), 'k--', 'LineWidth',3);
+                    
+                    flipped = flipud(cropped);
+                    figure('Name','Image Upside-Down'), hold on, imshow(img, 'InitialMagnification', 'fit');
+                    image(flipped, 'XData', [imageProps(ret).BoundingBox(1) imageProps(ret).BoundingBox(1)+imageProps(ret).BoundingBox(3)], 'YData', [imageProps(ret).BoundingBox(2) imageProps(ret).BoundingBox(2)+imageProps(ret).BoundingBox(4)]);
+                    
+                 end
+                 
+                
+            end
+        end
+    end
             
 end
 hold off
