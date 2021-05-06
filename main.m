@@ -111,7 +111,7 @@ dim = [0.1 0 0 .95];
 str = strcat(num2str(length(find([regionProps.Area] > minArea))), ' objects, ', num2str(num_of_coins), ' coins with value of coins ', num2str(value_of_coins));
 annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
-guides = {'a: Show object Areas', 'p: Show object Perimeters', 's: Show object Sharpnesses', 't: Transform a selected object'};
+guides = {'a: Show object Areas', 'p: Show object Perimeters', 's: Show object Sharpnesses', 't: Transform a selected object', 'h: Show heatmaps'};
 guide = strjoin(guides, '\n');
 
 closeText = {'Press x to close the image'};
@@ -123,6 +123,7 @@ while (true)
     t = text(width + 10, 100, guide);
     [ci,li,but] = ginput(1)
    
+    
     %{        
     if but == 1 %add point
         plot(ci,li,'r.','MarkerSize',18); drawnow;
@@ -147,10 +148,10 @@ while (true)
             boundingBox = regionProps(order(i)).BoundingBox;
             cropped = imcrop(img, boundingBox);
             [x, y, color] = size(cropped);
-            bw = imclose(cropped(:,:,1) > thr,se)
+            bw = imclose(cropped(:,:,1) > thr,se);
             images(i) = subplot(2, length(order), i); imshow(bw);
             area = num2str(regionProps(order(i)).Area);
-            text(0, y + 20, area)
+            text(0, y + 20, area);
             
             %Show original image cropped
             images(i) = subplot(2, length(order), length(order) + i); imshow(cropped);
@@ -172,6 +173,62 @@ while (true)
         end
     end  
     
+    if but == 104   %show heatmaps
+        HeatmapsFigure = figure('Name', 'Show heatmaps for cropeed images', 'units','normalized','outerposition',[0 0 1 1]);
+        
+        %For each object, calculate the bounding box and show the area
+        for i=1:num
+            boundingBox = regionProps(i).BoundingBox;
+            cropped = imcrop(img, boundingBox);
+             
+            %Show original image cropped
+            subplot(2, num, i); imshow(cropped);
+            
+            subplot(2, num, num + i); 
+            
+            % get x,y of begining of the image, image size, and x,y of
+            % centroid
+            bx = regionProps(i).BoundingBox(1);
+            by = regionProps(i).BoundingBox(2);
+            bwidth = regionProps(i).BoundingBox(4);
+            bheight = regionProps(i).BoundingBox(3);
+            cent_x = regionProps(i).Centroid(1);
+            cent_y = regionProps(i).Centroid(2);
+           
+            %relative center
+            cent_x = cent_x - bx;
+            cent_y = cent_y - by;
+            
+            [X,Y] = ind2sub([bwidth, bheight], 1:bwidth*bheight);
+            inds = sub2ind([bwidth, bheight], X, Y);
+            distancesFromCenter = uint8(sqrt((X-cent_x).^2+(Y-cent_y).^2));
+            minDistance = min(distancesFromCenter);
+            maxDistance = max(distancesFromCenter);
+            scale = 255/maxDistance-minDistance;
+            distancesFromCenter = uint8(distancesFromCenter*scale);
+            heatmap = zeros([bwidth bheight 3])
+            heatmap(:,:,1) = 255;
+            heatmap(:,:,2) = reshape(distancesFromCenter,[bwidth, bheight]);
+            heatmap(:,:,3) = 255;
+            imshow(uint8(heatmap.*regionProps(i).FilledImage));
+            
+            %Press x to quit message
+            if i == 1
+                [x, y, color] = size(cropped);
+                t = text(0, y + 20, closeImageText);
+            end
+        end
+        
+        while(true)
+            [ci, li, but] = ginput(1);
+            if but == 120   %press x to leave current image
+                close(HeatmapsFigure);
+                %imshow(img);
+            end
+            break
+        end
+    end  
+    
     if but == 112   %order by perimeter
         Perimeters = [regionProps.Perimeter];
         
@@ -185,7 +242,7 @@ while (true)
             boundingBox = regionProps(order(i)).BoundingBox;
             cropped = imcrop(img, boundingBox);
             [x, y, color] = size(cropped);
-            bw = imclose(cropped(:,:,1) > thr,se)
+            bw = imclose(cropped(:,:,1) > thr,se);
             BW2 = bwperim(bw());
             images(i) = subplot(2, length(order), i); imshow(BW2);
             perimeter = num2str(regionProps(order(i)).Perimeter);
@@ -290,4 +347,5 @@ while (true)
             
 end
 hold off
+
 
