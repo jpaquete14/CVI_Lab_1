@@ -52,7 +52,7 @@ for i=1:num
    regionProps(i).(newField) = sharpness;
 end
 
-figure(333);
+figure('Name', 'CVI LAB 1', 'units','normalized','outerposition',[0 0 1 1]);
 imshow(img);
 
 
@@ -111,8 +111,11 @@ dim = [0.1 0 0 .95];
 str = strcat(num2str(length(find([regionProps.Area] > minArea))), ' objects, ', num2str(num_of_coins), ' coins with value of coins ', num2str(value_of_coins));
 annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
-guides = {'a: Order objects by Area', 'p: Order objects by Perimteter', 's: Order objects by Sharpness', 't: Transform a selected object'};
+guides = {'a: Show object Areas', 'p: Show object Perimeters', 's: Show object Sharpnesses', 't: Transform a selected object'};
 guide = strjoin(guides, '\n');
+
+closeText = {'Press x to close the image'};
+closeImageText = strjoin(closeText, '\n');
 
 %Select which coin to show the details
 %but = 1;
@@ -120,7 +123,7 @@ while (true)
     t = text(width + 10, 100, guide);
     [ci,li,but] = ginput(1)
    
-            
+    %{        
     if but == 1 %add point
         plot(ci,li,'r.','MarkerSize',18); drawnow;
         selected = lb(int16(li), int16(ci));
@@ -130,25 +133,40 @@ while (true)
         end
 
     end
-    
+    %}
     if but == 97   %order by area
         Areas = [regionProps.Area];
-        fprintf('%s \n', num2str(Areas))
+        
+        %Sort areas from smallest value to highest value
         [~, order] = sort(Areas);
-        fprintf('%s \n', num2str(order))
-        OrderedAreaFigure = figure('Name', 'Objects ordered by area');
+        OrderedAreaFigure = figure('Name', 'Objects ordered by area', 'units','normalized','outerposition',[0 0 1 1]);
         images = [];
+        
+        %For each object, calculate the bounding box and show the area
         for i=1:length(order)
             boundingBox = regionProps(order(i)).BoundingBox;
             cropped = imcrop(img, boundingBox);
-            images(i) = subplot(1, length(order), i); imshow(cropped);
+            [x, y, color] = size(cropped);
+            bw = imclose(cropped(:,:,1) > thr,se)
+            images(i) = subplot(2, length(order), i); imshow(bw);
+            area = num2str(regionProps(order(i)).Area);
+            text(0, y + 20, area)
+            
+            %Show original image cropped
+            images(i) = subplot(2, length(order), length(order) + i); imshow(cropped);
+            
+            %Press x to quit message
+            if i == 1
+                [x, y, color] = size(cropped);
+                t = text(0, y + 20, closeImageText);
+            end
         end
-        linkaxes(images, 'x');
+        
         while(true)
             [ci, li, but] = ginput(1);
             if but == 120   %press x to leave current image
                 close(OrderedAreaFigure);
-                imshow(img);
+                %imshow(img);
             end
             break
         end
@@ -156,22 +174,38 @@ while (true)
     
     if but == 112   %order by perimeter
         Perimeters = [regionProps.Perimeter];
-        fprintf('%s \n', num2str(Perimeters))
+        
+        %Sort perimeters from smallest value to highest value
         [~, order] = sort(Perimeters);
-        fprintf('%s \n', num2str(order))
-        OrderedPerimeterFigure = figure('Name', 'Objects ordered by perimeter');
+        OrderedPerimeterFigure = figure('Name', 'Objects ordered by perimeter', 'units','normalized','outerposition',[0 0 1 1]);
         images = [];
+        
+        %For each object, calculate the bounding box and show the perimeter
         for i=1:length(order)
             boundingBox = regionProps(order(i)).BoundingBox;
             cropped = imcrop(img, boundingBox);
-            images(i) = subplot(1, length(order), i); imshow(cropped);
+            [x, y, color] = size(cropped);
+            bw = imclose(cropped(:,:,1) > thr,se)
+            BW2 = bwperim(bw());
+            images(i) = subplot(2, length(order), i); imshow(BW2);
+            perimeter = num2str(regionProps(order(i)).Perimeter);
+            text(0, y + 20, perimeter)
+            
+            %Show original image cropped
+            images(i) = subplot(2, length(order), length(order) + i); imshow(cropped);
+            
+            %Press x to quit message
+            if i == 1
+                [x, y, color] = size(cropped);
+                t = text(0, y + 20 , closeImageText);
+            end
         end
-        linkaxes(images, 'x');
+
         while(true)
             [ci, li, but] = ginput(1);
             if but == 120   %press x to leave current image
                 close(OrderedPerimeterFigure);
-                imshow(img);
+                %imshow(img);
             end
             break
         end
@@ -182,19 +216,23 @@ while (true)
         fprintf('%s \n', num2str(Sharpnesses))
         [~, order] = sort(Sharpnesses);
         fprintf('%s \n', num2str(order))
-        OrderedSharpnessFigure = figure('Name', 'Objects ordered by sharpness');
+        OrderedSharpnessFigure = figure('Name', 'Objects ordered by sharpness', 'units','normalized','outerposition',[0 0 1 1]);
         images = [];
         for i=1:length(order)
             boundingBox = regionProps(order(i)).BoundingBox;
             cropped = imcrop(img, boundingBox);
             images(i) = subplot(1, length(order), i); imshow(cropped);
+            if i == 1
+                [x, y, color] = size(cropped);
+                t = text(0, y + 100, closeImageText);
+            end
         end
         linkaxes(images, 'x');
         while(true)
             [ci, li, but] = ginput(1);
             if but == 120   %press x to leave current image
                 close(OrderedSharpnessFigure);
-                imshow(img);
+                %imshow(img);
             end
             break
         end
@@ -205,25 +243,47 @@ while (true)
     end
     
     if but == 116   %t for geometrical transformation
-        imshow(img);
+        %TODO: Add text for object selection
+        selectObject = 'Select object to be transformed';
+        aux = text(100, 100, selectObject);
         while(true)
             [ci, li, but] = ginput(1);
+            %Wait for selection of the object
             if but == 1 %click
                  sel = lb(round(li), round(ci));
                  if(sel ~= 0)
                     boundingBox = regionProps(sel).BoundingBox;
                     cropped = imcrop(img, boundingBox);
                     
+                    transformationFigure = figure('Name', 'Upside-Down Transformation', 'units','normalized','outerposition',[0 0 1 1]);
+                    subplot(1, 2, 1);
                     [B, L, N, A] = bwboundaries(lb);
                     boundary = B{sel};
-                    plot(boundary(:,2), boundary(:,1), 'k--', 'LineWidth',3);
+                    imshow(img);
                     
-                    flipped = flipud(cropped);
-                    figure('Name','Object Upside-Down'), hold on, imshow(flipped, 'InitialMagnification', 'fit');
+                    %Press x to quit text
+                    [x, y, color] = size(img);
+                    t = text(0, y, closeImageText);
                     
+                    t = text(0, 10, 'Original Image');
+                    
+                    subplot(1, 2, 2);
+                    flipped = flipud(cropped); 
+                    hold on, imshow(img);
+                    image(flipped, 'XData', [regionProps(sel).BoundingBox(1) regionProps(sel).BoundingBox(1)+regionProps(sel).BoundingBox(3)], 'YData', [regionProps(sel).BoundingBox(2) regionProps(sel).BoundingBox(2)+regionProps(sel).BoundingBox(4)]);
+                    [x, y, color] = size(img);
+                    t = text(0, 10, 'Transformed Image');
                  end
-                 
-                
+                 break;
+            end
+        end
+        while(true)
+            [ci, li, but] = ginput(1);
+            if but == 120   %press x to leave current image
+                close(transformationFigure);
+                %imshow(img);
+                delete(aux);
+                break;
             end
         end
     end
