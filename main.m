@@ -52,7 +52,7 @@ for i=1:num
    regionProps(i).(newField) = sharpness;
 end
 
-figure('Name', 'CVI LAB 1', 'units','normalized','outerposition',[0 0 1 1]);
+mainFigure = figure('Name', 'CVI LAB 1', 'units','normalized','outerposition',[0 0 1 1]);
 imshow(img);
 
 
@@ -315,6 +315,7 @@ while (true)
                     ax.YDisplayLabels = nan(size(ax.YDisplayData));
                     colormap hot;
                     grid off;
+                    figure(mainFigure)
                  end
                  break;
             end
