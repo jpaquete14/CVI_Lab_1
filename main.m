@@ -159,7 +159,7 @@ dim = [0.1 0 0 .95];
 str = strcat(num2str(length(find([regionProps.Area] > minArea))), ' objects, ', num2str(num_of_coins), ' coins with value of coins: ', num2str(value_of_coins));
 annotation('textbox',dim,'String',str,'FitBoxToText','on', 'FontSize',18);
 
-guides = {'a: Show object Areas', 'p: Show object Perimeters', 's: Show object Sharpnesses', 't: Transform a selected object', 'h: Heatmap of selected image', 'r: Relative heatmaps for multiple images'};
+guides = {'a: Show object Areas', 'p: Show object Perimeters', 's: Show object Sharpnesses', 't: Transform a selected object', 'h: Heatmap of selected images'};
 guide = strjoin(guides, '\n');
 
 closeText = {'Press x to crose the image'};
@@ -215,62 +215,6 @@ while (true)
             [ci, li, but] = ginput(1);
             if but == 120   %press x to leave current image
                 close(OrderedAreaFigure);
-                %imshow(img);
-            end
-            break
-        end
-    end  
-    
-    if but == 104   %show heatmaps
-        HeatmapsFigure = figure('Name', 'Show heatmaps for cropeed images', 'units','normalized','outerposition',[0 0 1 1]);
-        
-        %For each object, calculate the bounding box and show the area
-        for i=1:num
-            boundingBox = regionProps(i).BoundingBox;
-            cropped = imcrop(img, boundingBox);
-             
-            %Show original image cropped
-            subplot(2, num, i); imshow(cropped);
-            
-            subplot(2, num, num + i); 
-            
-            % get x,y of begining of the image, image size, and x,y of
-            % centroid
-            bx = regionProps(i).BoundingBox(1);
-            by = regionProps(i).BoundingBox(2);
-            bwidth = regionProps(i).BoundingBox(4);
-            bheight = regionProps(i).BoundingBox(3);
-            cent_x = regionProps(i).Centroid(1);
-            cent_y = regionProps(i).Centroid(2);
-           
-            %relative center
-            cent_x = cent_x - bx;
-            cent_y = cent_y - by;
-            
-            [X,Y] = ind2sub([bwidth, bheight], 1:bwidth*bheight);
-            inds = sub2ind([bwidth, bheight], X, Y);
-            distancesFromCenter = uint8(sqrt((X-cent_x).^2+(Y-cent_y).^2));
-            minDistance = min(distancesFromCenter);
-            maxDistance = max(distancesFromCenter);
-            scale = 255/maxDistance-minDistance;
-            distancesFromCenter = uint8(distancesFromCenter*scale);
-            heatmap = zeros([bwidth bheight 3])
-            heatmap(:,:,1) = 255;
-            heatmap(:,:,2) = reshape(distancesFromCenter,[bwidth, bheight]);
-            heatmap(:,:,3) = 255;
-            imshow(uint8(heatmap.*regionProps(i).FilledImage));
-            
-            %Press x to quit message
-            if i == 1
-                [x, y, color] = size(cropped);
-                t = text(0, y + 20, closeImageText, 'FontSize',18);
-            end
-        end
-        
-        while(true)
-            [ci, li, but] = ginput(1);
-            if but == 120   %press x to leave current image
-                close(HeatmapsFigure);
                 %imshow(img);
             end
             break
@@ -423,52 +367,9 @@ while (true)
                 break;
             end
         end
-    end    
+    end       
     
-    if but == 104   %t for image heatmap
-        selectObject = 'Select object for heatmap';
-        aux = text(100, 100, selectObject);
-        while(true)
-            [ci, li, but] = ginput(1);
-            %Wait for selection of the object
-            if but == 1 %click
-                 sel = lb(round(li), round(ci));
-                 if(sel ~= 0)
-                    hatmapFigure = figure('Name', 'Heatmap of element', 'units','normalized','outerposition',[0 0 1 1]);
-                                         
-                    cent_x = regionProps(i).Centroid(1);
-                    cent_y = regionProps(i).Centroid(2);
-                    
-                    [imgh, imgw, imgc] = size(img);
-                    [Y,X] = ind2sub([imgh, imgw], 1:imgw*imgh);
-                    
-                    distancesFromCenter = sqrt((X-cent_x).^2+(Y-cent_y).^2);
-                    
-                    heatmap(reshape(distancesFromCenter,[imgh, imgw]));
-                    
-                      
-                    ax = gca;
-                    ax.XDisplayLabels = nan(size(ax.XDisplayData));
-                    ax.YDisplayLabels = nan(size(ax.YDisplayData));
-                    colormap hot;
-                    grid off;
-                    figure(mainFigure)
-                 end
-                 break;
-            end
-        end
-        while(true)
-            [ci, li, but] = ginput(1);
-            if but == 120   %press x to leave current image
-                close(hatmapFigure);
-                %imshow(img);
-                delete(aux);
-                break;
-            end
-        end
-    end     
-    
-    if but == 114   %r for relative heatmaps
+    if but == 104   %h for relative heatmaps
         selectObject = 'Select objects for heatmaps';
         aux = text(100, 100, selectObject);
         elementsToCompare = [];
@@ -489,11 +390,16 @@ while (true)
 
                 [imgh, imgw, imgd] = size(img);
                 [Y,X] = ind2sub([imgh, imgw], 1:imgw*imgh);
-                distancesFromCenter = zeros([length(elementsToCompare) imgw*imgh]);
-                for i = 1:length(elementsToCompare)
-                    distancesFromCenter(i, :) = sqrt((X-regionProps(elementsToCompare(i)).Centroid(1)).^2+(Y-regionProps(elementsToCompare(i)).Centroid(2)).^2);
+                if length(elementsToCompare) > 1
+                    distancesFromCenter = zeros([length(elementsToCompare) imgw*imgh]);
+                    for i = 1:length(elementsToCompare)
+                        distancesFromCenter(i, :) = sqrt((X-regionProps(elementsToCompare(i)).Centroid(1)).^2+(Y-regionProps(elementsToCompare(i)).Centroid(2)).^2);
+                    end
+                    heatmap(reshape(min(distancesFromCenter),[imgh, imgw]));
+                else
+                    distancesFromCenter = sqrt((X-regionProps(elementsToCompare(1)).Centroid(1)).^2+(Y-regionProps(elementsToCompare(1)).Centroid(2)).^2);
+                    heatmap(reshape(distancesFromCenter,[imgh, imgw]));
                 end
-                heatmap(reshape(min(distancesFromCenter),[imgh, imgw]));
 
 
                 ax = gca;
