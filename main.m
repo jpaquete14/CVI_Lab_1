@@ -100,7 +100,7 @@ for i=1:num
    regionProps(i).(newField) = sharpness;
 end
 
-figure('Name', 'CVI LAB 1', 'units','normalized','outerposition',[0 0 1 1]);
+mainFigure = figure('Name', 'CVI LAB 1', 'units','normalized','outerposition',[0 0 1 1]);
 imshow(img);
 
 
@@ -159,10 +159,10 @@ dim = [0.1 0 0 .95];
 str = strcat(num2str(length(find([regionProps.Area] > minArea))), ' objects, ', num2str(num_of_coins), ' coins with value of coins: ', num2str(value_of_coins));
 annotation('textbox',dim,'String',str,'FitBoxToText','on', 'FontSize',18);
 
-guides = {'a: Show object Areas', 'p: Show object Perimeters', 's: Show object Sharpnesses', 't: Transform a selected object', 'h: Show heatmaps'};
+guides = {'a: Show object Areas', 'p: Show object Perimeters', 's: Show object Sharpnesses', 't: Transform a selected object', 'r: Relative heatmaps'};
 guide = strjoin(guides, '\n');
 
-closeText = {'Press x to close the image'};
+closeText = {'Press x to crose the image'};
 closeImageText = strjoin(closeText, '\n');
 
 %Select which coin to show the details
@@ -423,8 +423,49 @@ while (true)
                 break;
             end
         end
-    end
-            
+    end    
+    
+    if but == 114   %t for image heatmap
+        selectObject = 'Select object for heatmap';
+        aux = text(100, 100, selectObject);
+        while(true)
+            [ci, li, but] = ginput(1);
+            %Wait for selection of the object
+            if but == 1 %click
+                 sel = lb(round(li), round(ci));
+                 if(sel ~= 0)
+                    relativeHatmapFigure = figure('Name', 'Relative heatmap to other elements', 'units','normalized','outerposition',[0 0 1 1]);
+                                         
+                    cent_x = regionProps(sel).Centroid(1);
+                    cent_y = regionProps(sel).Centroid(2);
+                    
+                    objects_mask = lb > 0;
+                    
+                    [imgh, imgw imgd] = size(img);
+                    [Y,X] = ind2sub([imgh, imgw], 1:imgw*imgh);
+                    distancesFromCenter = sqrt((X-cent_x).^2+(Y-cent_y).^2);
+                    heatmap(reshape(distancesFromCenter,[imgh, imgw]));
+                      
+                    ax = gca;
+                    ax.XDisplayLabels = nan(size(ax.XDisplayData));
+                    ax.YDisplayLabels = nan(size(ax.YDisplayData));
+                    colormap hot;
+                    grid off;
+                    figure(mainFigure)
+                 end
+                 break;
+            end
+        end
+        while(true)
+            [ci, li, but] = ginput(1);
+            if but == 120   %press x to leave current image
+                close(relativeHatmapFigure);
+                %imshow(img);
+                delete(aux);
+                break;
+            end
+        end
+    end      
 end
 hold off
 
