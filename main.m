@@ -5,6 +5,54 @@ minArea = 10;
 circularityThr = 0.05;
 img = imread('Moedas3.jpg');
 
+
+%%Ask which image to use
+fprintf('1: Choose image samples from collection\n')
+fprintf('2: Choose your own image from directory\n')
+
+command = input('>> ');
+
+if command == 1
+    fprintf('1: Moedas1.jpg\n');
+    fprintf('2: Moedas2.jpg\n');
+    fprintf('3: Moedas3.jpg\n');
+    fprintf('4: Moedas4.jpg\n');
+           
+    imgNr = input('>> ');
+    
+    switch imgNr
+            case 1
+                imgPath = 'Moedas1.jpg';
+                img = imread(imgPath);
+            case 2
+                imgPath = 'Moedas2.jpg';
+                img = imread(imgPath);
+            case 3
+                imgPath = 'Moedas3.jpg';
+                img = imread(imgPath);
+            case 4
+                imgPath = 'Moedas4.jpg';
+                img = imread(imgPath);
+            otherwise
+                fprintf('\nInvalid image number\n');
+    end
+end
+
+if command == 2
+    fprintf('Place the image int the following path:\n');
+    dir = pwd;
+    disp(dir);
+    
+    fprintf('\nInsert filename of image\n');
+    filename = input('>> ', 's');
+     try
+            imgPath = strcat(dir,'/',filename);
+            originalImage = imread(imgPath);
+    catch
+        fprintf('\nFile not found in directory!\n')
+     end
+end
+    
 %% Plot image and each layer of the color
 %figure;
 %subplot(3,3,2);
@@ -96,7 +144,7 @@ for i=1:num
         
         txt = strcat('Value: ', num2str(coin));
         ulp = fliplr(upLPoint);
-        text(ulp(1), ulp(2), txt,'HorizontalAlignment','center')
+        text(ulp(1), ulp(2), txt,'HorizontalAlignment','center', 'FontSize',18)
         %add to the overall value
         if coin ~= 0
           num_of_coins = num_of_coins + 1;
@@ -108,8 +156,8 @@ for i=1:num
 end
 
 dim = [0.1 0 0 .95];
-str = strcat(num2str(length(find([regionProps.Area] > minArea))), ' objects, ', num2str(num_of_coins), ' coins with value of coins ', num2str(value_of_coins));
-annotation('textbox',dim,'String',str,'FitBoxToText','on');
+str = strcat(num2str(length(find([regionProps.Area] > minArea))), ' objects, ', num2str(num_of_coins), ' coins with value of coins: ', num2str(value_of_coins));
+annotation('textbox',dim,'String',str,'FitBoxToText','on', 'FontSize',18);
 
 guides = {'a: Show object Areas', 'p: Show object Perimeters', 's: Show object Sharpnesses', 't: Transform a selected object', 'h: Heatmap of selected image', 'r: Relative heatmaps for multiple images'};
 guide = strjoin(guides, '\n');
@@ -120,7 +168,7 @@ closeImageText = strjoin(closeText, '\n');
 %Select which coin to show the details
 %but = 1;
 while (true)
-    t = text(width + 10, 100, guide);
+    t = text(width + 10, 100, guide, 'FontSize',18);
     [ci,li,but] = ginput(1)
    
     
@@ -151,7 +199,7 @@ while (true)
             bw = imclose(cropped(:,:,1) > thr,se);
             images(i) = subplot(2, length(order), i); imshow(bw);
             area = num2str(regionProps(order(i)).Area);
-            text(0, y + 20, area);
+            text(0, y + 20, area, 'FontSize',18);
             
             %Show original image cropped
             images(i) = subplot(2, length(order), length(order) + i); imshow(cropped);
@@ -159,7 +207,7 @@ while (true)
             %Press x to quit message
             if i == 1
                 [x, y, color] = size(cropped);
-                t = text(0, y + 20, closeImageText);
+                t = text(0, y + 20, closeImageText, 'FontSize',18);
             end
         end
         
@@ -167,6 +215,62 @@ while (true)
             [ci, li, but] = ginput(1);
             if but == 120   %press x to leave current image
                 close(OrderedAreaFigure);
+                %imshow(img);
+            end
+            break
+        end
+    end  
+    
+    if but == 104   %show heatmaps
+        HeatmapsFigure = figure('Name', 'Show heatmaps for cropeed images', 'units','normalized','outerposition',[0 0 1 1]);
+        
+        %For each object, calculate the bounding box and show the area
+        for i=1:num
+            boundingBox = regionProps(i).BoundingBox;
+            cropped = imcrop(img, boundingBox);
+             
+            %Show original image cropped
+            subplot(2, num, i); imshow(cropped);
+            
+            subplot(2, num, num + i); 
+            
+            % get x,y of begining of the image, image size, and x,y of
+            % centroid
+            bx = regionProps(i).BoundingBox(1);
+            by = regionProps(i).BoundingBox(2);
+            bwidth = regionProps(i).BoundingBox(4);
+            bheight = regionProps(i).BoundingBox(3);
+            cent_x = regionProps(i).Centroid(1);
+            cent_y = regionProps(i).Centroid(2);
+           
+            %relative center
+            cent_x = cent_x - bx;
+            cent_y = cent_y - by;
+            
+            [X,Y] = ind2sub([bwidth, bheight], 1:bwidth*bheight);
+            inds = sub2ind([bwidth, bheight], X, Y);
+            distancesFromCenter = uint8(sqrt((X-cent_x).^2+(Y-cent_y).^2));
+            minDistance = min(distancesFromCenter);
+            maxDistance = max(distancesFromCenter);
+            scale = 255/maxDistance-minDistance;
+            distancesFromCenter = uint8(distancesFromCenter*scale);
+            heatmap = zeros([bwidth bheight 3])
+            heatmap(:,:,1) = 255;
+            heatmap(:,:,2) = reshape(distancesFromCenter,[bwidth, bheight]);
+            heatmap(:,:,3) = 255;
+            imshow(uint8(heatmap.*regionProps(i).FilledImage));
+            
+            %Press x to quit message
+            if i == 1
+                [x, y, color] = size(cropped);
+                t = text(0, y + 20, closeImageText, 'FontSize',18);
+            end
+        end
+        
+        while(true)
+            [ci, li, but] = ginput(1);
+            if but == 120   %press x to leave current image
+                close(HeatmapsFigure);
                 %imshow(img);
             end
             break
@@ -190,7 +294,7 @@ while (true)
             BW2 = bwperim(bw());
             images(i) = subplot(2, length(order), i); imshow(BW2);
             perimeter = num2str(regionProps(order(i)).Perimeter);
-            text(0, y + 20, perimeter)
+            text(0, y + 20, perimeter, 'FontSize',18)
             
             %Show original image cropped
             images(i) = subplot(2, length(order), length(order) + i); imshow(cropped);
@@ -198,7 +302,7 @@ while (true)
             %Press x to quit message
             if i == 1
                 [x, y, color] = size(cropped);
-                t = text(0, y + 20 , closeImageText);
+                t = text(0, y + 20 , closeImageText, 'FontSize',18);
             end
         end
 
@@ -225,7 +329,7 @@ while (true)
             images(i) = subplot(1, length(order), i); imshow(cropped);
             if i == 1
                 [x, y, color] = size(cropped);
-                t = text(0, y + 100, closeImageText);
+                t = text(0, y + 100, closeImageText, 'FontSize',18);
             end
         end
         linkaxes(images, 'x');
@@ -246,7 +350,7 @@ while (true)
     if but == 116   %t for geometrical transformation
         %TODO: Add text for object selection
         selectObject = 'Select object to be transformed';
-        aux = text(100, 100, selectObject);
+        aux = text(100, 100, selectObject, 'FontSize',18);
         while(true)
             [ci, li, but] = ginput(1);
             %Wait for selection of the object
@@ -256,24 +360,56 @@ while (true)
                     boundingBox = regionProps(sel).BoundingBox;
                     cropped = imcrop(img, boundingBox);
                     
+                    [h, w] = size(regionProps(1).FilledImage);
+                    indecies = find(regionProps(1).FilledImage);
+                    [Y, X] = ind2sub([h w], indecies)
+                    %{
+                    
                     transformationFigure = figure('Name', 'Upside-Down Transformation', 'units','normalized','outerposition',[0 0 1 1]);
                     subplot(1, 2, 1);
                     [B, L, N, A] = bwboundaries(lb);
                     boundary = B{sel};
+                    size_boundary = size(boundary);
+                    matrix = [boundary ones(length(boundary),1)]
                     imshow(img);
+                    
+                    theta = pi/2;
+                    t = [1    0   0
+                         0    1   0
+                         0    0   0.2];
+                    
+                    tform = matrix * t;
+                    
+                    
+                    subplot(1, 2, 2);
+                    [x, y] = ind2sub()
+                    imshow(bw); hold on;
+                    plot(tform(:,1),tform(:,2),'b.','markersize',10);
+                    [x, y, color] = size(img);
+                    t = text(0, 10, 'Transformed Image');
                     
                     %Press x to quit text
                     [x, y, color] = size(img);
                     t = text(0, y, closeImageText);
                     
                     t = text(0, 10, 'Original Image');
-                    
+                    %}
+                    %{
                     subplot(1, 2, 2);
                     flipped = flipud(cropped); 
                     hold on, imshow(img);
                     image(flipped, 'XData', [regionProps(sel).BoundingBox(1) regionProps(sel).BoundingBox(1)+regionProps(sel).BoundingBox(3)], 'YData', [regionProps(sel).BoundingBox(2) regionProps(sel).BoundingBox(2)+regionProps(sel).BoundingBox(4)]);
-                    [x, y, color] = size(img);
-                    t = text(0, 10, 'Transformed Image');
+                    %}
+                    
+                     
+                    %[rows_boundary,cols_boundary]=find(lb());
+                    %matrix = [rows_boundary, cols_boundary];
+                    %size_matrix = size(matrix)
+                    %size_aux = size(ones(length(matrix),1))
+                    
+                    %size_matrix = size(matrix_new);
+                    
+                
                  end
                  break;
             end
