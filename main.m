@@ -144,7 +144,7 @@ for i=1:num
         
         txt = strcat('Value: ', num2str(coin));
         ulp = fliplr(upLPoint);
-        text(ulp(1), ulp(2), txt,'HorizontalAlignment','center', 'FontSize',18)
+        text(ulp(1), ulp(2), txt,'HorizontalAlignment','center', 'FontSize',14)
         %add to the overall value
         if coin ~= 0
           num_of_coins = num_of_coins + 1;
@@ -159,16 +159,16 @@ dim = [0.1 0 0 .95];
 str = strcat(num2str(length(find([regionProps.Area] > minArea))), ' objects, ', num2str(num_of_coins), ' coins with value of coins: ', num2str(value_of_coins));
 annotation('textbox',dim,'String',str,'FitBoxToText','on', 'FontSize',18);
 
-guides = {'a: Show object Areas', 'p: Show object Perimeters', 's: Show object Sharpnesses', 't: Transform a selected object', 'h: Heatmap of selected images'};
+guides = {'a: Show object Areas', 'p: Show object Perimeters', 's: Show object Sharpnesses', 't: Transform a selected object', 'b: Order by similarity (Circularity)','h: Heatmap of selected images', 'Press x to close new images'};
 guide = strjoin(guides, '\n');
 
-closeText = {'Press x to crose the image'};
+closeText = {'Press x to close the image'};
 closeImageText = strjoin(closeText, '\n');
 
 %Select which coin to show the details
 %but = 1;
 while (true)
-    t = text(width + 10, 100, guide, 'FontSize',18);
+    t = text(width + 10, 100, guide, 'FontSize',15);
     [ci,li,but] = ginput(1)
    
     
@@ -294,7 +294,7 @@ while (true)
     if but == 116   %t for geometrical transformation
         %TODO: Add text for object selection
         selectObject = 'Select object to be transformed';
-        aux = text(100, 100, selectObject, 'FontSize',18);
+        aux = text(100, 100, selectObject, 'FontSize',15);
         while(true)
             [ci, li, but] = ginput(1);
             %Wait for selection of the object
@@ -367,7 +367,60 @@ while (true)
                 break;
             end
         end
-    end       
+    end    
+    
+    if but == 98 %order by similarity
+        selectObject = 'Select object';
+        aux = text(100, 100, selectObject, 'FontSize',15);
+        while(true)
+            [ci, li, but] = ginput(1);
+            %Wait for selection of the object
+            if but == 1 %click
+                sel = lb(round(li), round(ci));
+                if (sel ~= 0)
+                    [B, L, N, A] = bwboundaries(lb);
+                    boundary = B{sel};
+                    
+                    % Using Circularity as a measure
+                    % Initialise struct to contain similarity values
+                    listSimilarity = struct('Similarity', {}, 'Index', {});
+                    ind = [regionProps.Circularity];
+                    
+                   for r=1:num
+                       if(r ~= sel)
+                           similarity = abs(regionProps(r).Circularity - regionProps(sel).Circularity);
+
+                           % Add similarity and index to struct
+                           simil = struct('Similarity', similarity, 'Index', r);
+                           listSimilarity = [listSimilarity ; simil];
+                       end
+                   end
+
+                   [sorted, ind] = sort([listSimilarity.Similarity]);
+                   similarityFigure = figure('Name','Similarity between objects');
+                   
+                   hold on;
+                   
+
+                   for o=1:(num-1)
+                       boundingBox = regionProps(listSimilarity(ind(o)).Index).BoundingBox;
+                       cropped = imcrop(img, boundingBox);
+                       subplot(1, length(ind), o), imshow(cropped);
+                   end
+                end
+            end
+            break;
+        end
+        while(true)
+            [ci, li, but] = ginput(1);
+            if but == 120   %press x to leave current image
+                close(similarityFigure);
+                %imshow(img);
+                delete(aux);
+                break;
+            end
+        end
+    end
     
     if but == 104   %h for relative heatmaps
         selectObject = 'Select objects for heatmaps';
