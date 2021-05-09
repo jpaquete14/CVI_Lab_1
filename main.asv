@@ -271,8 +271,10 @@ while (true)
             boundingBox = regionProps(order(i)).BoundingBox;
             cropped = imcrop(img, boundingBox);
             images(i) = subplot(1, length(order), i); imshow(cropped);
+            sharpness = num2str(regionProps(order(i)).Sharpness);
+            [x, y, color] = size(cropped);
+            text(0, y + 20, sharpness, 'FontSize',18)
             if i == 1
-                [x, y, color] = size(cropped);
                 t = text(0, y + 100, closeImageText, 'FontSize',18);
             end
         end
@@ -304,56 +306,14 @@ while (true)
                     boundingBox = regionProps(sel).BoundingBox;
                     cropped = imcrop(img, boundingBox);
                     
-                    [h, w] = size(regionProps(1).FilledImage);
-                    indecies = find(regionProps(1).FilledImage);
-                    [Y, X] = ind2sub([h w], indecies)
-                    %{
+                    t = [1 0 0; .5 1 0; 0 0 1]
                     
-                    transformationFigure = figure('Name', 'Upside-Down Transformation', 'units','normalized','outerposition',[0 0 1 1]);
-                    subplot(1, 2, 1);
-                    [B, L, N, A] = bwboundaries(lb);
-                    boundary = B{sel};
-                    size_boundary = size(boundary);
-                    matrix = [boundary ones(length(boundary),1)]
-                    imshow(img);
+                    TransformationFigure = figure('Name', 'Object Transformation', 'units','normalized','outerposition',[0 0 1 1]);
+                    subplot(2,1,1)
+                    imshow(cropped);
+                    subplot(2,1,2)
+                    imshow(transform(img, regionProps(sel).BoundingBox, t));
                     
-                    theta = pi/2;
-                    t = [1    0   0
-                         0    1   0
-                         0    0   0.2];
-                    
-                    tform = matrix * t;
-                    
-                    
-                    subplot(1, 2, 2);
-                    [x, y] = ind2sub()
-                    imshow(bw); hold on;
-                    plot(tform(:,1),tform(:,2),'b.','markersize',10);
-                    [x, y, color] = size(img);
-                    t = text(0, 10, 'Transformed Image');
-                    
-                    %Press x to quit text
-                    [x, y, color] = size(img);
-                    t = text(0, y, closeImageText);
-                    
-                    t = text(0, 10, 'Original Image');
-                    %}
-                    %{
-                    subplot(1, 2, 2);
-                    flipped = flipud(cropped); 
-                    hold on, imshow(img);
-                    image(flipped, 'XData', [regionProps(sel).BoundingBox(1) regionProps(sel).BoundingBox(1)+regionProps(sel).BoundingBox(3)], 'YData', [regionProps(sel).BoundingBox(2) regionProps(sel).BoundingBox(2)+regionProps(sel).BoundingBox(4)]);
-                    %}
-                    
-                     
-                    %[rows_boundary,cols_boundary]=find(lb());
-                    %matrix = [rows_boundary, cols_boundary];
-                    %size_matrix = size(matrix)
-                    %size_aux = size(ones(length(matrix),1))
-                    
-                    %size_matrix = size(matrix_new);
-                    
-                
                  end
                  break;
             end
@@ -389,17 +349,17 @@ while (true)
                     for r=1:num
                        if(r ~= sel)
                            %Check if its a coin
-                            if abs(regionProps(i).Circularity - 1.0) < circularityThr
+                            if abs(regionProps(r).Circularity - 1.0) < circularityThr
                                % Add similarity and index to struct
-                               area = regionProps(r).Area - regionProps.Area(sel);
+                               area = abs(regionProps(r).Area - regionProps(sel).Area);
                                areaCoins = struct('Area', area, 'Index', r);
-                               listAreaCoins = [listArea ; simil];
+                               listAreaCoins = [listAreaCoins ; areaCoins];
                                indCoins = [indCoins; regionProps(r).Area];
                             else
-                               area = regionProps(r).Area - regionProps(sel).Area;
+                               area = abs(regionProps(r).Area - regionProps(sel).Area);
                                areaObjects = struct('Area', area, 'Index', r);
-                               listAreaObjects = [listArea ; simil];
-                               indObjects = [indCoins; regionProps(r).Area];
+                               listAreaObjects = [listAreaObjects ; areaObjects];
+                               indObjects = [indObjects; regionProps(r).Area];
                             end
                        end
                     end
@@ -412,28 +372,29 @@ while (true)
                         for o=1:(length(listAreaCoins))
                            boundingBox = regionProps(listAreaCoins(indCoins(o)).Index).BoundingBox;
                            cropped = imcrop(img, boundingBox);
-                           subplot(1, length(indCoins + indObjects), o), imshow(cropped);
+                           subplot(1, length(indCoins) + length(indObjects), o), imshow(cropped);
                         end
                         for o=1:(length(listAreaObjects))
                            boundingBox = regionProps(listAreaObjects(indObjects(o)).Index).BoundingBox;
                            cropped = imcrop(img, boundingBox);
-                           subplot(1, length(indCoins + indObjects), o + length(listAreaCoins)), imshow(cropped);
+                           subplot(1, length(indCoins) + length(indObjects), o + length(listAreaCoins)), imshow(cropped);
                         end
                     
                     %print if selected object is not a coin
                     else 
-                        for o=1:(length(listAreaCoins))
-                           boundingBox = regionProps(listAreaCoins(indCoins(o)).Index).BoundingBox;
-                           cropped = imcrop(img, boundingBox);
-                           subplot(1, length(indCoins + indObjects), o), imshow(cropped);
-                        end
                         for o=1:(length(listAreaObjects))
                            boundingBox = regionProps(listAreaObjects(indObjects(o)).Index).BoundingBox;
                            cropped = imcrop(img, boundingBox);
-                           subplot(1, length(indCoins + indObjects), o + length(listAreaCoins)), imshow(cropped);
+                           subplot(1, length(indCoins) + length(indObjects), o), imshow(cropped);
                         end
+                        for o=1:(length(listAreaCoins))
+                           boundingBox = regionProps(listAreaCoins(indCoins(o)).Index).BoundingBox;
+                           cropped = imcrop(img, boundingBox);
+                           subplot(1, length(indCoins) + length(indObjects), o + length(listAreaObjects)), imshow(cropped);
+                        end
+                     
                     end
-
+                    %{
                     % Using Circularity as a measure
                     % Initialise struct to contain similarity values
                     listSimilarity = struct('Similarity', {}, 'Index', {});
@@ -460,6 +421,7 @@ while (true)
                        cropped = imcrop(img, boundingBox);
                        subplot(1, length(ind), o), imshow(cropped);
                    end
+                    %}
                 end
             end
             break;

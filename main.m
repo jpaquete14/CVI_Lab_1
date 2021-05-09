@@ -53,40 +53,18 @@ if command == 2
      end
 end
     
-%% Plot image and each layer of the color
-%figure;
-%subplot(3,3,2);
-%imshow(img);
-%subplot(3,3,4);
-%imshow(img(:,:,1));
-%subplot(3,3,5);
-%imshow(img(:,:,2));
-%subplot(3,3,6);
-%imshow(img(:,:,3));
-%subplot(3,3,7);
-%imhist(img(:,:,1));
-%subplot(3,3,8);
-%imhist(img(:,:,2));
-%subplot(3,3,9);
-%imhist(img(:,:,3));
-%% Use the layer that separates the background best 
-%%figure;
-%%imshow(img(:,:,1) > thr);
-
-%% Remove noises (?)
+% Remove noises (?)
 %%figure;
 se = strel('disk',3);
 bw = imclose(img(:,:,1) > thr,se);
-%%imshow(bw);
 
-%% Conected components
+% Conected components
 [lb num]=bwlabel(bw);
-% imshow(uint8(lb * 20));
 
-%%
+%
 regionProps = regionprops(lb,'centroid', 'area', 'perimeter', 'FilledImage', 'Orientation','MajorAxisLength','MinorAxisLength', 'BoundingBox');
 [height, width, dim] = size(img);
-%Compute and add fields to imageProps
+
 newField = 'Circularity';
 for i=1:num
    regionProps(i).(newField) = (4 * pi * regionProps(i).Area) / ((regionProps(i).Perimeter).^2);
@@ -127,14 +105,7 @@ for i=1:num
     [lin col] = find(lb == i);
     upLPoint = min([lin col]);
     dWindow  = max([lin col]) - upLPoint + 1;
-    
-% Doesn't work for me     
-%     ellipse(int8(regionProps(i).MajorAxisLength/2),...
-%             int8(regionProps(i).MinorAxisLength/2),...
-%             int8(-regionProps(i).Orientation*pi/180),...
-%             int8(regionProps(i).Centroid(1)),...
-%             int8(regionProps(i).Centroid(2)),'r');
- 
+   
     %check if it's a coin
     if abs(regionProps(i).Circularity - 1.0) < circularityThr
         rectangle('Position', [fliplr(upLPoint) fliplr(dWindow)], 'Curvature',[1,1], 'EdgeColor',[1 0 1],'linewidth',2);
@@ -165,24 +136,10 @@ guide = strjoin(guides, '\n');
 closeText = {'Press x to close the image'};
 closeImageText = strjoin(closeText, '\n');
 
-%Select which coin to show the details
-%but = 1;
 while (true)
     t = text(width + 10, 100, guide, 'FontSize',15);
     [ci,li,but] = ginput(1)
-   
-    
-    %{        
-    if but == 1 %add point
-        plot(ci,li,'r.','MarkerSize',18); drawnow;
-        selected = lb(int16(li), int16(ci));
-        if(selected ~= 0)
-           details(regionProps(selected), img) ;
-           figure(333);
-        end
-
-    end
-    %}
+  
     if but == 97   %order by area
         Areas = [regionProps.Area];
         
@@ -306,56 +263,19 @@ while (true)
                     boundingBox = regionProps(sel).BoundingBox;
                     cropped = imcrop(img, boundingBox);
                     
-                    [h, w] = size(regionProps(1).FilledImage);
-                    indecies = find(regionProps(1).FilledImage);
-                    [Y, X] = ind2sub([h w], indecies)
-                    %{
+                    t = [1 0 0; .5 1 0; 0 0 1]
                     
-                    transformationFigure = figure('Name', 'Upside-Down Transformation', 'units','normalized','outerposition',[0 0 1 1]);
-                    subplot(1, 2, 1);
-                    [B, L, N, A] = bwboundaries(lb);
-                    boundary = B{sel};
-                    size_boundary = size(boundary);
-                    matrix = [boundary ones(length(boundary),1)]
-                    imshow(img);
+                    transformationFigure = figure('Name', 'Object Transformation', 'units','normalized','outerposition',[0 0 1 1]);
+                    subplot(1,2,1)
+                    [x, y, color] = size(cropped);
+                    imshow(cropped);
+                    text(0, y + 10, 'Original Object', 'FontSize',18)
+                    text(0, y + 30, closeImageText, 'FontSize',18);
+                    subplot(1,2,2)
+                    [x, y, color] = size(cropped);
+                    imshow(transform(img, regionProps(sel).BoundingBox, t));
+                    text(0, y + 10, 'Transformed Object', 'FontSize',18)
                     
-                    theta = pi/2;
-                    t = [1    0   0
-                         0    1   0
-                         0    0   0.2];
-                    
-                    tform = matrix * t;
-                    
-                    
-                    subplot(1, 2, 2);
-                    [x, y] = ind2sub()
-                    imshow(bw); hold on;
-                    plot(tform(:,1),tform(:,2),'b.','markersize',10);
-                    [x, y, color] = size(img);
-                    t = text(0, 10, 'Transformed Image');
-                    
-                    %Press x to quit text
-                    [x, y, color] = size(img);
-                    t = text(0, y, closeImageText);
-                    
-                    t = text(0, 10, 'Original Image');
-                    %}
-                    %{
-                    subplot(1, 2, 2);
-                    flipped = flipud(cropped); 
-                    hold on, imshow(img);
-                    image(flipped, 'XData', [regionProps(sel).BoundingBox(1) regionProps(sel).BoundingBox(1)+regionProps(sel).BoundingBox(3)], 'YData', [regionProps(sel).BoundingBox(2) regionProps(sel).BoundingBox(2)+regionProps(sel).BoundingBox(4)]);
-                    %}
-                    
-                     
-                    %[rows_boundary,cols_boundary]=find(lb());
-                    %matrix = [rows_boundary, cols_boundary];
-                    %size_matrix = size(matrix)
-                    %size_aux = size(ones(length(matrix),1))
-                    
-                    %size_matrix = size(matrix_new);
-                    
-                
                  end
                  break;
             end
@@ -370,6 +290,7 @@ while (true)
             end
         end
     end    
+    
     
     if but == 98 %order by similarity
         selectObject = 'Select object';
@@ -407,7 +328,7 @@ while (true)
                     end
                     [sortedCoins, indCoins] = sort([listAreaCoins.Area]);
                     [sortedObjects, indObjects] = sort([listAreaObjects.Area]);
-                    similarityFigure = figure('Name','Similarity between objects');
+                    similarityFigure = figure('Name','Similarity between objects', 'units','normalized','outerposition',[0 0 1 1]);
                     
                     %print if selected object is a coin
                     if abs(regionProps(sel).Circularity - 1.0) < circularityThr
@@ -436,34 +357,6 @@ while (true)
                         end
                      
                     end
-                    %{
-                    % Using Circularity as a measure
-                    % Initialise struct to contain similarity values
-                    listSimilarity = struct('Similarity', {}, 'Index', {});
-                    ind = [regionProps.Circularity];
-                    
-                   for r=1:num
-                       if(r ~= sel)
-                           circularity = abs(regionProps(r).Circularity - regionProps(sel).Circularity);
-                           
-                           % Add similarity and index to struct
-                           simil = struct('Similarity', similarity, 'Index', r);
-                           listSimilarity = [listSimilarity ; simil];
-                       end
-                   end
-
-                   [sorted, ind] = sort([listSimilarity.Similarity]);
-                   similarityFigure = figure('Name','Similarity between objects');
-                   
-                   hold on;
-                   
-
-                   for o=1:(num-1)
-                       boundingBox = regionProps(listSimilarity(ind(o)).Index).BoundingBox;
-                       cropped = imcrop(img, boundingBox);
-                       subplot(1, length(ind), o), imshow(cropped);
-                   end
-                    %}
                 end
             end
             break;
@@ -481,7 +374,9 @@ while (true)
     
     if but == 104   %h for relative heatmaps
         selectObject = 'Select objects for heatmaps';
-        aux = text(100, 100, selectObject);
+        displayResults = 'Press r to get the results';
+        aux = text(100, 100, selectObject, 'FontSize',15);
+        aux2 = text(100, 120, displayResults, 'FontSize',15);
         elementsToCompare = [];
         while(true)
             [ci, li, but] = ginput(1);
@@ -527,6 +422,7 @@ while (true)
                 close(relativeHatmapFigure);
                 %imshow(img);
                 delete(aux);
+                delete(aux2);
                 break;
             end
         end
