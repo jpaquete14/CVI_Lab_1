@@ -1,7 +1,6 @@
 clear all, close all
 
 thr = 140;
-tform = [1 0 0; .5 1 0; 0 0 1];
 minArea = 10;
 circularityThr = 0.05;
 img = imread('Moedas3.jpg');
@@ -441,17 +440,28 @@ while (true)
             
             %Display results
             if but == 114 %press r for results
-                relativeHatmapFigure = figure('Name', 'Transform selected objects', 'units','normalized','outerposition',[0 0 1 1]);
-                n = length(elementsToCompare);
-                for i = 1:n
-                    bbox = regionProps(elementsToCompare(i)).BoundingBox;
-                    cropped = imcrop(img, bbox);
-                    subplot(2,n,i);
-                    imshow(cropped);
-                    subplot(2,n,i+n);
-                    result = transform(img, bbox, tform);
-                    imshow(result);
+                relativeHatmapFigure = figure('Name', 'Tr', 'units','normalized','outerposition',[0 0 1 1]);
+
+                [imgh, imgw, imgd] = size(img);
+                [Y,X] = ind2sub([imgh, imgw], 1:imgw*imgh);
+                if length(elementsToCompare) > 1
+                    distancesFromCenter = zeros([length(elementsToCompare) imgw*imgh]);
+                    for i = 1:length(elementsToCompare)
+                        distancesFromCenter(i, :) = sqrt((X-regionProps(elementsToCompare(i)).Centroid(1)).^2+(Y-regionProps(elementsToCompare(i)).Centroid(2)).^2);
+                    end
+                    heatmap(reshape(min(distancesFromCenter),[imgh, imgw]));
+                else
+                    distancesFromCenter = sqrt((X-regionProps(elementsToCompare(1)).Centroid(1)).^2+(Y-regionProps(elementsToCompare(1)).Centroid(2)).^2);
+                    heatmap(reshape(distancesFromCenter,[imgh, imgw]));
                 end
+
+
+                ax = gca;
+                ax.XDisplayLabels = nan(size(ax.XDisplayData));
+                ax.YDisplayLabels = nan(size(ax.YDisplayData));
+                colormap hot;
+                grid off;
+                figure(mainFigure)
                 break;
             end
         end

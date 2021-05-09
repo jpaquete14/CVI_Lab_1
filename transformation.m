@@ -13,13 +13,20 @@ regionProps = regionprops(lb,'centroid', 'area', 'perimeter', 'FilledImage', 'Or
 sel = 3;
 
 t = [1 0 0; .5 1 0; 0 0 1]
-cropped = imcrop(img, regionProps(sel).BoundingBox);
 
 figure
-subplot(2,1,1)
-imshow(cropped);
-subplot(2,1,2)
-imshow(transform(img, regionProps(sel).BoundingBox, t));
+%%
+subplot(2,2,1)
+imshow(imcrop(img, regionProps(1).BoundingBox));
+%%
+subplot(2,2,2)
+imshow(transform(img, regionProps(1).BoundingBox, t));
+%%
+subplot(2,2,3)
+imshow(imcrop(img, regionProps(2).BoundingBox));
+%%
+subplot(2,2,4)
+imshow(transform(img, regionProps(2).BoundingBox, t));
 
 %%
 % transform = [

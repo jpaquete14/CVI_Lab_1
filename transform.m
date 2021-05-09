@@ -34,7 +34,7 @@ B_new = uint8(zeros([new_height new_width]));
 R_new(new_indecies) = uint8(R(indecies));
 G_new(new_indecies) = uint8(G(indecies));
 B_new(new_indecies) = uint8(B(indecies));
-subplot(4,1,4)
-imshow(cat(3, R_new, G_new, B_new));
+% subplot(4,1,4)
+% imshow(cat(3, R_new, G_new, B_new));
 result = cat(3, R_new, G_new, B_new)
 end
