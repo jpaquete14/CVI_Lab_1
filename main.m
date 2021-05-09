@@ -4,7 +4,7 @@ thr = 140;
 tform = [1 0 0; .5 1 0; 0 0 1];
 minArea = 10;
 circularityThr = 0.05;
-img = imread('Moedas3.jpg');
+%img = imread('Moedas3.jpg');
 
 
 %%Ask which image to use
@@ -220,9 +220,7 @@ while (true)
     
     if but == 115   %order by sharpness
         Sharpnesses = [regionProps.Sharpness];
-        %fprintf('%s \n', num2str(Sharpnesses))
         [~, order] = sort(Sharpnesses);
-        %fprintf('%s \n', num2str(order))
         OrderedSharpnessFigure = figure('Name', 'Objects ordered by sharpness', 'units','normalized','outerposition',[0 0 1 1]);
         images = [];
         for i=1:length(order)
@@ -250,48 +248,6 @@ while (true)
     if but == 113 %q to quit
         break;
     end
-    
-    if but == 116   %t for geometrical transformation
-        %TODO: Add text for object selection
-        selectObject = 'Select object to be transformed';
-        aux = text(100, 100, selectObject, 'FontSize',15);
-        while(true)
-            [ci, li, but] = ginput(1);
-            %Wait for selection of the object
-            if but == 1 %click
-                 sel = lb(round(li), round(ci));
-                 if(sel ~= 0)
-                    boundingBox = regionProps(sel).BoundingBox;
-                    cropped = imcrop(img, boundingBox);
-                    
-                    t = [1 0 0; .5 1 0; 0 0 1]
-                    
-                    transformationFigure = figure('Name', 'Object Transformation', 'units','normalized','outerposition',[0 0 1 1]);
-                    subplot(1,2,1)
-                    [x, y, color] = size(cropped);
-                    imshow(cropped);
-                    text(0, y + 10, 'Original Object', 'FontSize',18)
-                    text(0, y + 30, closeImageText, 'FontSize',18);
-                    subplot(1,2,2)
-                    [x, y, color] = size(cropped);
-                    imshow(transform(img, regionProps(sel).BoundingBox, t));
-                    text(0, y + 10, 'Transformed Object', 'FontSize',18)
-                    
-                 end
-                 break;
-            end
-        end
-        while(true)
-            [ci, li, but] = ginput(1);
-            if but == 120   %press x to leave current image
-                close(transformationFigure);
-                %imshow(img);
-                delete(aux);
-                break;
-            end
-        end
-    end    
-    
     
     if but == 98 %order by similarity
         selectObject = 'Select object';
@@ -376,7 +332,9 @@ while (true)
     % NEW
     if but == 116   %t for transform
         selectObject = 'Select objects for tansform';
-        aux = text(100, 100, selectObject);
+        displayResults = 'Press r to get the results';
+        aux = text(100, 100, selectObject, 'FontSize',15);
+        aux2 = text(100, 120, displayResults, 'FontSize',15);
         elementsToCompare = [];
         while(true)
             [ci, li, but] = ginput(1);
@@ -391,13 +349,17 @@ while (true)
             
             %Display results
             if but == 114 %press r for results
-                relativeHatmapFigure = figure('Name', 'Transform selected objects', 'units','normalized','outerposition',[0 0 1 1]);
+                transformFigure = figure('Name', 'Transform selected objects', 'units','normalized','outerposition',[0 0 1 1]);
                 n = length(elementsToCompare);
                 for i = 1:n
                     bbox = regionProps(elementsToCompare(i)).BoundingBox;
                     cropped = imcrop(img, bbox);
                     subplot(2,n,i);
                     imshow(cropped);
+                    if i == 1
+                        [x, y, color] = size(cropped);
+                        text(0, y + 30, closeImageText, 'FontSize',15);
+                    end
                     subplot(2,n,i+n);
                     result = transform(img, bbox, tform);
                     imshow(result);
@@ -408,9 +370,10 @@ while (true)
         while(true)
             [ci, li, but] = ginput(1);
             if but == 120   %press x to leave current image
-                close(relativeHatmapFigure);
+                close(transformFigure);
                 %imshow(img);
                 delete(aux);
+                delete(aux2);
                 break;
             end
         end
@@ -464,7 +427,6 @@ while (true)
             [ci, li, but] = ginput(1);
             if but == 120   %press x to leave current image
                 close(relativeHatmapFigure);
-                %imshow(img);
                 delete(aux);
                 delete(aux2);
                 break;
