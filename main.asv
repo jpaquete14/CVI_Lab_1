@@ -271,10 +271,8 @@ while (true)
             boundingBox = regionProps(order(i)).BoundingBox;
             cropped = imcrop(img, boundingBox);
             images(i) = subplot(1, length(order), i); imshow(cropped);
-            sharpness = num2str(regionProps(order(i)).Sharpness);
-            [x, y, color] = size(cropped);
-            text(0, y + 20, sharpness, 'FontSize',18)
             if i == 1
+                [x, y, color] = size(cropped);
                 t = text(0, y + 100, closeImageText, 'FontSize',18);
             end
         end
@@ -391,17 +389,17 @@ while (true)
                     for r=1:num
                        if(r ~= sel)
                            %Check if its a coin
-                            if abs(regionProps(r).Circularity - 1.0) < circularityThr
+                            if abs(regionProps(i).Circularity - 1.0) < circularityThr
                                % Add similarity and index to struct
-                               area = abs(regionProps(r).Area - regionProps(sel).Area);
+                               area = regionProps(r).Area - regionProps.Area(sel);
                                areaCoins = struct('Area', area, 'Index', r);
-                               listAreaCoins = [listAreaCoins ; areaCoins];
+                               listAreaCoins = [listArea ; simil];
                                indCoins = [indCoins; regionProps(r).Area];
                             else
-                               area = abs(regionProps(r).Area - regionProps(sel).Area);
+                               area = regionProps(r).Area - regionProps(sel).Area;
                                areaObjects = struct('Area', area, 'Index', r);
-                               listAreaObjects = [listAreaObjects ; areaObjects];
-                               indObjects = [indObjects; regionProps(r).Area];
+                               listAreaObjects = [listArea ; simil];
+                               indObjects = [indCoins; regionProps(r).Area];
                             end
                        end
                     end
@@ -414,29 +412,28 @@ while (true)
                         for o=1:(length(listAreaCoins))
                            boundingBox = regionProps(listAreaCoins(indCoins(o)).Index).BoundingBox;
                            cropped = imcrop(img, boundingBox);
-                           subplot(1, length(indCoins) + length(indObjects), o), imshow(cropped);
+                           subplot(1, length(indCoins + indObjects), o), imshow(cropped);
                         end
                         for o=1:(length(listAreaObjects))
                            boundingBox = regionProps(listAreaObjects(indObjects(o)).Index).BoundingBox;
                            cropped = imcrop(img, boundingBox);
-                           subplot(1, length(indCoins) + length(indObjects), o + length(listAreaCoins)), imshow(cropped);
+                           subplot(1, length(indCoins + indObjects), o + length(listAreaCoins)), imshow(cropped);
                         end
                     
                     %print if selected object is not a coin
                     else 
-                        for o=1:(length(listAreaObjects))
-                           boundingBox = regionProps(listAreaObjects(indObjects(o)).Index).BoundingBox;
-                           cropped = imcrop(img, boundingBox);
-                           subplot(1, length(indCoins) + length(indObjects), o), imshow(cropped);
-                        end
                         for o=1:(length(listAreaCoins))
                            boundingBox = regionProps(listAreaCoins(indCoins(o)).Index).BoundingBox;
                            cropped = imcrop(img, boundingBox);
-                           subplot(1, length(indCoins) + length(indObjects), o + length(listAreaObjects)), imshow(cropped);
+                           subplot(1, length(indCoins + indObjects), o), imshow(cropped);
                         end
-                     
+                        for o=1:(length(listAreaObjects))
+                           boundingBox = regionProps(listAreaObjects(indObjects(o)).Index).BoundingBox;
+                           cropped = imcrop(img, boundingBox);
+                           subplot(1, length(indCoins + indObjects), o + length(listAreaCoins)), imshow(cropped);
+                        end
                     end
-                    %{
+
                     % Using Circularity as a measure
                     % Initialise struct to contain similarity values
                     listSimilarity = struct('Similarity', {}, 'Index', {});
@@ -463,7 +460,6 @@ while (true)
                        cropped = imcrop(img, boundingBox);
                        subplot(1, length(ind), o), imshow(cropped);
                    end
-                    %}
                 end
             end
             break;
