@@ -1,6 +1,7 @@
 clear all, close all
 
 thr = 140;
+tform = [1 0 0; .5 1 0; 0 0 1];
 minArea = 10;
 circularityThr = 0.05;
 img = imread('Moedas3.jpg');
@@ -371,6 +372,49 @@ while (true)
             end
         end
     end
+
+    % NEW
+    if but == 116   %t for transform
+        selectObject = 'Select objects for tansform';
+        aux = text(100, 100, selectObject);
+        elementsToCompare = [];
+        while(true)
+            [ci, li, but] = ginput(1);
+           
+            %Select objects for comparision 
+            if but == 1 %click with mouse
+                sel = lb(round(li), round(ci));
+                if (sel ~= 0)
+                    elementsToCompare(end+1) = sel;
+                end
+            end
+            
+            %Display results
+            if but == 114 %press r for results
+                relativeHatmapFigure = figure('Name', 'Transform selected objects', 'units','normalized','outerposition',[0 0 1 1]);
+                n = length(elementsToCompare);
+                for i = 1:n
+                    bbox = regionProps(elementsToCompare(i)).BoundingBox;
+                    cropped = imcrop(img, bbox);
+                    subplot(2,n,i);
+                    imshow(cropped);
+                    subplot(2,n,i+n);
+                    result = transform(img, bbox, tform);
+                    imshow(result);
+                end
+                break;
+            end
+        end
+        while(true)
+            [ci, li, but] = ginput(1);
+            if but == 120   %press x to leave current image
+                close(relativeHatmapFigure);
+                %imshow(img);
+                delete(aux);
+                break;
+            end
+        end
+    end  
     
     if but == 104   %h for relative heatmaps
         selectObject = 'Select objects for heatmaps';
